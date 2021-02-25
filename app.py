@@ -2,16 +2,13 @@ from flask import Flask
 from flask import request
 from flask import render_template
 from flask import redirect, url_for
-from flask_socketio import SocketIO, emit
 import threading
 import Adafruit_DHT as dht
 import time
 import gpiozero as gpio
 import json
-import eventlet
 
-h=""
-t=""
+
 
 controlDict = {}
 
@@ -19,7 +16,7 @@ app = Flask(__name__)
 
 @app.before_first_request
 def create_application():
-    global controlDict, h, t
+    global controlDict
 
     controlDict['heatPin']=gpio.LED(26)
     controlDict['coolPin']=gpio.LED(20)
@@ -42,7 +39,7 @@ def create_application():
         controlDict['fanPin'].on()
        
     def runHvac():
-        global  controlDict, h, t
+        global controlDict
 
         controlDict['heatPin'].off()
         controlDict['coolPin'].off()
@@ -50,7 +47,7 @@ def create_application():
         
         while True:
             ## print("HvacMode: {} fanMode: {} hvacState: {} hvacCoolTemp: {} hvacHeatTemp: {}".format(controlDict['hvacMode'], controlDict['hvacFan'], controlDict['hvacState'], controlDict['hvacCool'], controlDict['hvacHeat']))
-            if(controlDict['hvacMode']=="heat" and t < controlDict['hvacHeat'] -0.75):
+            if(controlDict['hvacMode']=="heat" and controlDict['currTemp'] < controlDict['hvacHeat'] -0.75):
                 #check if temp is lower
                 if(controlDict['hvacFan'] != "on"):
                     controlDict['fanPin'].on()
@@ -59,7 +56,7 @@ def create_application():
 
                 controlDict['heatPin'].on()
                 
-                while(t < controlDict['hvacHeat'] +0.75 and controlDict['hvacMode'] == "heat"):
+                while(controlDict['currTemp'] < controlDict['hvacHeat'] +0.75 and controlDict['hvacMode'] == "heat"):
                     time.sleep(10)
 
                 controlDict['heatPin'].off()
@@ -69,7 +66,7 @@ def create_application():
                     controlDict['fanPin'].off()
 
 
-            elif(controlDict['hvacMode']=="cool" and t > controlDict['hvacCool'] + 0.75):
+            elif(controlDict['hvacMode']=="cool" and controlDict['currTemp'] > controlDict['hvacCool'] + 0.75):
                 #check if temp is lower
                 if(controlDict['hvacFan'] != "on"):
                     controlDict['fanPin'].on()
@@ -78,7 +75,7 @@ def create_application():
 
                 controlDict['coolPin'].on()
                 
-                while(t > controlDict['hvacCool'] -0.75 and controlDict['hvacMode'] == "cool"):
+                while(controlDict['currTemp'] > controlDict['hvacCool'] -0.75 and controlDict['hvacMode'] == "cool"):
                     time.sleep(10)
 
                 controlDict['coolPin'].off()
@@ -91,18 +88,19 @@ def create_application():
 
 
     def checkSensors():
-        global controlDict, h, t
+        global controlDict
+        
         dhtPin = 4
         while True:
-            h,temp = dht.read_retry(dht.DHT22, dhtPin)
+            controlDict['currHumidity'], temp = dht.read_retry(dht.DHT22, dhtPin)
             
             #Ensure kind of reasonable temp sensor values; if it errored, it would probably say -127 or 127
             temp = temp * (9/5) + 32
             if(temp>=40 and temp<=100):
-                t = temp
+                controlDict['currTemp'] = temp
             
             ## Debug sensor
-            print('Temp={0:0.1f}*F  Humidity={1:0.1f}%'.format(temp,h))
+            print('Temp={0:0.1f}*F  Humidity={1:0.1f}%'.format(temp,controlDict['currHumidity']))
             time.sleep(10) # only check sensor every 10 seconds    
         
     
@@ -198,3 +196,9 @@ def fan():
         f.write("{:.2f}\n".format(controlDict['hvacCool']))
 
     return redirect(url_for('home'))
+
+@app.route('/data')
+def retData():
+    global controlDict
+
+    return render_template('data.html', currTemp="{:.1f}".format(controlDict['currTemp']))
