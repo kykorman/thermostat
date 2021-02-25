@@ -1,0 +1,200 @@
+<!doctype html>
+<title>Therm1</title>
+<!--Starting point from here: https://github.com/soqueira/My-100-days-css/tree/master/Thermostat-->
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width = device-width, initial-scale = 1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Thermostat</title>
+
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js" integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+
+<script>
+    </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+    <script>function loadPage(){
+        $.ajax({
+        url: "/data",
+          type: "GET",
+          dataType: "html",
+          cache: false,
+          success: function(response) {
+            $("#thepage").html(response);
+          },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus</h1>");
+          }
+        }); 
+    }</script>
+
+
+
+<script>
+    window.setInterval(loadPage, 6000);</script>
+
+    <style type = text/css>
+    
+        @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,300');
+
+        body,
+        html {
+        width: 100%;
+        height: 100%;
+        background: #2B4147;
+        margin: 0;
+        padding: 0;
+        font-family: 'Open Sans', Helvetica, sans-serif;
+        overflow: hidden;
+        user-select: none;
+        }
+
+        .container {
+        width: 400px;
+        height: 400px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        }
+
+        .Thermostat {
+        width: 400px;
+        height: 400px;
+        background: #707070;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 2px 4px 8px 0 rgba(0, 0, 0, 0.3);
+        }
+
+        .ring {
+        width: 90%;
+        height: 90%;
+        border-radius: 50%;
+        position: absolute;
+        background-image: linear-gradient(to right, #6badf8 0%, white 50%, #ff1648 100%);
+        z-index: 1;
+        }
+
+        .border {
+        position: absolute;
+        width: 50%;
+        height: 50%;
+        top: 50%;
+        left: 50%;
+        background: black;
+        transform-origin: 0 0;
+        transform: rotate(45deg);
+        border-radius: 0 0 100% 0;
+        }
+
+        .status {
+        width: 75%;
+        height: 75%;
+        background: black;
+        z-index: 2;
+        border-radius: 50%;
+        box-shadow: 1px 2px 4px 0 rgba(0, 0, 0, 0.2);
+        position: absolute;
+        }
+
+        /* Hijacked this to be the thermostat temp*/
+        .outside {
+        position: absolute;
+        font-size: 12px;
+        left: 50%;
+        top: 20%;
+        transform: translate(-50%,-50%);
+        color: #7a7a7a;
+        }
+
+        .room {
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, 60%);
+        font-size: 1em;
+        color: #ffffff;
+        background: transparent;
+        }
+
+        .temp {
+        font-size: 3.5em;
+        color: white;
+        position: absolute;
+
+
+        }
+
+        .temp:nth-child(1) {
+        opacity: 1;
+        position: absolute;
+        left:50%;
+        top:50%;
+        transform: translate(-50%,-50%);
+        transition: .5s ease-in-out;
+        }
+        /*
+        .temp:nth-child(2) {
+        opacity: 0;
+        transform: translate(60px, 30%) scale(0);
+        transition: .5s ease-in-out;
+        }
+        */
+        .Thermostat:hover .status .temp:nth-child(1) {
+        opacity: 0;
+        transform: translate(-20px, 30%) scale(0);
+        transition: .5s ease-in-out;
+        }
+
+        .Thermostat:hover .status .outside{
+        transition: .5s ease-in-out;
+        opacity: 1;
+        transform: translate(0, 45px) scale(5);
+        color: white
+        }
+
+        .indicator {
+        width: 2px;
+        height: 3em;
+        position: absolute;
+        left: 50%;
+        color:white;
+        background: black;
+        transform-origin: 0 50%;
+        transform: rotate(-50deg);
+        transition: .5s ease-in-out;
+        }
+
+        .Thermostat:hover .status .indicator {
+        transform: rotate(-40deg);
+        }
+
+        .mode{
+            color:white;
+        }
+
+        .fan{
+            color:white;
+        }
+
+
+</style></head>
+
+<html>
+<body>
+<div id="thepage"><h1>Initializing...</h1></div>
+<script>
+
+
+</script>
+</body>
+
+</html>
