@@ -11,20 +11,20 @@ import json
 
 
 controlDict = {}
-
+pinDict = {}
 app = Flask(__name__)
 
 @app.before_first_request
 def create_application():
-    global controlDict
+    global pinDict, controlDict
 
-    controlDict['heatPin']=gpio.LED(26)
-    controlDict['coolPin']=gpio.LED(20)
-    controlDict['fanPin']=gpio.LED(21)
+    pinDict['heatPin']=gpio.LED(26, active_high=False) #Set active_high to false so that the relays default to pins disconnect (instead of with no power, they short all circuits :/)
+    pinDict['coolPin']=gpio.LED(20, active_high=False)
+    pinDict['fanPin']=gpio.LED(21, active_high=False)
 
-    controlDict['heatPin'].off()
-    controlDict['coolPin'].off()
-    controlDict['fanPin'].off()
+    pinDict['heatPin'].off()
+    pinDict['coolPin'].off()
+    pinDict['fanPin'].off()
     controlDict['hvacState'] = False
 
 
@@ -36,59 +36,59 @@ def create_application():
         controlDict['hvacCool'] = float(f.readline())
 
     if controlDict['hvacFan'] == "on":
-        controlDict['fanPin'].on()
+        pinDict['fanPin'].on()
        
     def runHvac():
-        global controlDict
+        global pinDict, controlDict
 
-        controlDict['heatPin'].off()
-        controlDict['coolPin'].off()
+        pinDict['heatPin'].off()
+        pinDict['coolPin'].off()
         controlDict['hvacState'] = False
         
         while True:
             ## print("HvacMode: {} fanMode: {} hvacState: {} hvacCoolTemp: {} hvacHeatTemp: {}".format(controlDict['hvacMode'], controlDict['hvacFan'], controlDict['hvacState'], controlDict['hvacCool'], controlDict['hvacHeat']))
-            if(controlDict['hvacMode']=="heat" and controlDict['currTemp'] < controlDict['hvacHeat'] -0.75):
+            if(controlDict['hvacMode']=="heat" and controlDict['currTemp'] < controlDict['hvacHeat'] -0.5):
                 #check if temp is lower
                 if(controlDict['hvacFan'] != "on"):
-                    controlDict['fanPin'].on()
+                    pinDict['fanPin'].on()
                 controlDict['hvacState'] = True
                 time.sleep(5)
 
-                controlDict['heatPin'].on()
+                pinDict['heatPin'].on()
                 
-                while(controlDict['currTemp'] < controlDict['hvacHeat'] +0.75 and controlDict['hvacMode'] == "heat"):
+                while(controlDict['currTemp'] < controlDict['hvacHeat'] +0.5 and controlDict['hvacMode'] == "heat"):
                     time.sleep(10)
 
-                controlDict['heatPin'].off()
+                pinDict['heatPin'].off()
                 time.sleep(5)
                 controlDict['hvacState'] = False
                 if(controlDict['hvacFan'] != "on"):
-                    controlDict['fanPin'].off()
+                    pinDict['fanPin'].off()
 
 
-            elif(controlDict['hvacMode']=="cool" and controlDict['currTemp'] > controlDict['hvacCool'] + 0.75):
+            elif(controlDict['hvacMode']=="cool" and controlDict['currTemp'] > controlDict['hvacCool'] + 0.5):
                 #check if temp is lower
                 if(controlDict['hvacFan'] != "on"):
-                    controlDict['fanPin'].on()
+                    pinDict['fanPin'].on()
                 controlDict['hvacState'] = True
                 time.sleep(5)
 
-                controlDict['coolPin'].on()
+                pinDict['coolPin'].on()
                 
-                while(controlDict['currTemp'] > controlDict['hvacCool'] -0.75 and controlDict['hvacMode'] == "cool"):
+                while(controlDict['currTemp'] > controlDict['hvacCool'] -0.5 and controlDict['hvacMode'] == "cool"):
                     time.sleep(10)
 
-                controlDict['coolPin'].off()
+                pinDict['coolPin'].off()
                 time.sleep(5)
                 controlDict['hvacState'] = False
                 if(controlDict['hvacFan'] != "on"):
-                     controlDict['fanPin'].off()
-            
+                     pinDict['fanPin'].off()
+    
             time.sleep(10)
 
 
     def checkSensors():
-        global controlDict
+        global pinDict, controlDict
         
         dhtPin = 4
         while True:
@@ -100,7 +100,7 @@ def create_application():
                 controlDict['currTemp'] = temp
             
             ## Debug sensor
-            print('Temp={0:0.1f}*F  Humidity={1:0.1f}%'.format(temp,controlDict['currHumidity']))
+            # print('Temp={0:0.1f}*F  Humidity={1:0.1f}%'.format(temp,controlDict['currHumidity']))
             time.sleep(10) # only check sensor every 10 seconds    
         
     
@@ -124,7 +124,7 @@ def home():
 # Go to /temp/heat or /temp/cool to set temp without changing operating mode. Could be useful for things like smart home integration.
 @app.route('/temp/<hvacHC>')
 def tempSet(hvacHC):
-    global controlDict
+    global pinDict, controlDict
 
     temp = request.args.get('temp', default = None, type = float)
     if(temp is not None and withinTempRange(temp)):
@@ -143,10 +143,10 @@ def tempSet(hvacHC):
 
 @app.route('/heat')
 def heat():
-    global controlDict
+    global pinDict, controlDict
     controlDict['hvacMode']="heat"
-    controlDict['coolPin'].off()
-
+    pinDict['coolPin'].off()
+    
     temp = request.args.get('temp', default = None, type = float)
     if(temp is not None and withinTempRange(temp)):
         controlDict['hvacHeat'] = temp
@@ -161,9 +161,9 @@ def heat():
 
 @app.route('/cool')
 def cool():
-    global controlDict
+    global pinDict, controlDict
     controlDict['hvacMode']="cool"
-    controlDict['heatPin'].off()
+    pinDict['heatPin'].off()
 
     temp = request.args.get('temp', default = None, type = float)
     if(temp is not None and withinTempRange(temp)):
@@ -179,15 +179,15 @@ def cool():
 
 @app.route('/fan')
 def fan():
-    global controlDict
+    global pinDict, controlDict
 
     if(controlDict['hvacFan'] == "auto"):
         controlDict['hvacFan'] = "on"
-        controlDict['fanPin'].on()
+        pinDict['fanPin'].on()
     else:
         controlDict['hvacFan'] = "auto"
         if(not controlDict['hvacState']): 
-            controlDict['fanPin'].off()
+            pinDict['fanPin'].off()
 
     with open('/root/thermo/settings.txt','w') as f:
         f.write(controlDict['hvacFan'] + "\n")
@@ -199,6 +199,35 @@ def fan():
 
 @app.route('/data')
 def retData():
-    global controlDict
+    global pinDict, controlDict
 
-    return render_template('data.html', currTemp="{:.1f}".format(controlDict['currTemp']))
+    pinState = {}
+    pinState['fanPin'] = pinDict['fanPin'].value
+    pinState['heatPin'] = pinDict['heatPin'].value
+    pinState['coolPin'] = pinDict['coolPin'].value
+
+    return json.dumps({**controlDict, **pinState})
+    #return render_template('data.html', currTemp="{:.1f}".format(controlDict['currTemp']))
+@app.route('/off')
+def turnOff():
+    global controlDict, pinDict
+    controlDict['hvacMode'] = "off" 
+
+    return redirect(url_for('home'))
+
+
+@app.route('/mode')
+def toggleMode():
+    global controlDict, pinDict
+
+    if(controlDict['hvacMode']=="cool"):
+        heat()
+    elif(controlDict['hvacMode']=="heat"):
+        turnOff()
+    else:
+        cool()
+    
+    return redirect(url_for('home'))
+
+    
+
