@@ -14,25 +14,8 @@
 <script>
     </script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-    <script>function loadPage(){
-        $.ajax({
-        url: "/data",
-          type: "GET",
-          dataType: "html",
-          cache: false,
-          success: function(response) {
-            $("#thepage").html(response);
-          },
-          error: function(xhr) {
-            $("#thepage").html("<h1>big snuus</h1>");
-          }
-        }); 
-    }</script>
 
 
-
-<script>
-    window.setInterval(loadPage, 6000);</script>
 
     <style type = text/css>
     
@@ -63,11 +46,14 @@
         }
 
         .Thermostat {
-        width: 400px;
-        height: 400px;
+        width: 90%;
+        height: 90%;
         background: #707070;
         border-radius: 50%;
         display: flex;
+        left:5%;
+        top:5%;
+    
         justify-content: center;
         align-items: center;
         box-shadow: 2px 4px 8px 0 rgba(0, 0, 0, 0.3);
@@ -86,7 +72,7 @@
         position: absolute;
         width: 50%;
         height: 50%;
-        top: 50%;
+        top: 50.2%;
         left: 50%;
         background: black;
         transform-origin: 0 0;
@@ -98,14 +84,14 @@
         width: 75%;
         height: 75%;
         background: black;
-        z-index: 2;
+        z-index: 4;
         border-radius: 50%;
         box-shadow: 1px 2px 4px 0 rgba(0, 0, 0, 0.2);
         position: absolute;
         }
 
         /* Hijacked this to be the thermostat temp*/
-        .outside {
+        .targetTemp {
         position: absolute;
         font-size: 12px;
         left: 50%;
@@ -114,14 +100,15 @@
         color: #7a7a7a;
         }
 
-        .room {
+        .humidity {
         position: absolute;
         bottom: 0;
+        height:2em;
         left: 50%;
-        top: 50%;
-        transform: translate(-50%, 60%);
+        top: 90%;
+        transform: translate(-50%);
         font-size: 1em;
-        color: #ffffff;
+        color: cyan;
         background: transparent;
         }
 
@@ -148,29 +135,41 @@
         transition: .5s ease-in-out;
         }
         */
-        .Thermostat:hover .status .temp:nth-child(1) {
+       /* .Thermostat:hover .status .temp:nth-child(1) {
         opacity: 0;
         transform: translate(-20px, 30%) scale(0);
         transition: .5s ease-in-out;
         }
 
-        .Thermostat:hover .status .outside{
+        .Thermostat:hover .status .targetTemp{
         transition: .5s ease-in-out;
         opacity: 1;
-        transform: translate(0, 45px) scale(5);
+        transform: translate(0, 50%) scale(5);
         color: white
         }
-
+*/
         .indicator {
-        width: 2px;
-        height: 3em;
+        width: 1%;
+        height: 45%;
         position: absolute;
-        left: 50%;
-        color:white;
-        background: black;
-        transform-origin: 0 50%;
-        transform: rotate(-50deg);
+        top: 5%;
+        left: 49.5%;
+        color: black;
+        background: green;
+        z-index: 3;
+        transform-origin: bottom center;
+       /* transform: rotate(-50deg); */
         transition: .5s ease-in-out;
+        }
+        .indicator2 {
+        width: 1%;
+        height: 45%;
+        position: absolute;
+        top: 5%;
+        left: 49.5%;
+        color: black;
+        background: gray;
+        z-index: 2;
         }
 
         .Thermostat:hover .status .indicator {
@@ -178,22 +177,225 @@
         }
 
         .mode{
-            color:white;
+            color:lightslategray;
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%);
+            width:30%;
+            height:10%;
+            text-align: center;
+            size:2em;
+            padding:0 0;
+            border:1px solid teal;
+            
         }
 
         .fan{
-            color:white;
+            color:lightslategray;
+            left: 50%;
+            top: 65%;
+            position: absolute;
+            transform: translate(-50%);
+            width:30%;
+            height:10%;
+            text-align: center;
+            size:2em;
+            padding:0 0;
+            border:1px solid teal;
+        }
+        .midgauge{
+            left: 50%;
+            top: 15%;
+            position: absolute;
+            z-index: 10;
+            color: snow;
+            transform: translate(-50%);
+        }
+        .on{
+            color:greenyellow;
+        }
+        .off{
+            color:red;
+        }
+        #bottom{
+            top:96%;
+            transform:rotate(180deg) scale(7.5, 3);
+        }
+        .tempChange{
+            position: absolute;
+            transform: scale(7.5,3);
+            color: white;
+            z-index: 5;
+            text-align: center;
+        }
+        #top{
+            top: -1%;
+        }
+        .l{
+            height:10%;
+            top:45%;
+            left:3%;
+            position:absolute;
+            color:skyblue;
+            z-index:5;
         }
 
-
+        .r{
+            height:10%;
+            top:45%;
+            left:90%;
+            position:absolute;
+            color:#c01e39;
+            z-index:5;
+        }
 </style></head>
 
 <html>
 <body>
-<div id="thepage"><h1>Initializing...</h1></div>
+<div id="thepage">
+  <div class="container">
+    <div class="Thermostat">
+        <div class="midgauge">70°</div>
+    <div class="indicator" id="indicator"></div>
+    <div class="indicator2" id="indicator2"></div>
+    <div class="tempChange" id="top">^</div>
+    <div class="tempChange" id="bottom">^</div>
+
+      <div class="ring">
+        <div class="border"></div>
+      </div>
+
+      <div class="status">
+        <div class="temp" id="currTemp"></div> <!-- This is the current temp-->
+
+        <div class="targetTemp" id="targetTemp"></div> <!-- What the HVAC is trying to get it to -->
+        <div class="l">60°</div>
+        <div class="r">80°</div>
+        <div class="humidity" id="humidity"></div>
+        <div class="mode" id="mode"></div>
+        <div class="fan" id="fan"></div>
+        <div class="tmp" id="tmp"></div>
+
+      </div>
+    </div>
+  </div></div>
+  <script>
+
+    //Change this to take JSON from flask
+    function updateIndicator(){
+        temp = document.getElementById("currTemp").innerHTML.split('°')[0];
+        //Rotate the indicator (dial thingy). Works out to -90deg is 60*, 90 deg is 80*
+        var needle = "rotate(-90deg)";
+        if(temp < 72){
+            needle = "rotate(-" + 9 * (70 - temp) + "deg)";
+        }else{
+            needle = "rotate(" + 9 * (temp - 70) + "deg)";
+        }
+
+        document.getElementsByClassName("indicator")[0].style.transform = needle; 
+    }
+    function loadPage(){
+        $.ajax({
+        url: "/data",
+          type: "GET",
+          dataType: "json",
+          cache: false,
+          success: function(response) {
+            $("#currTemp").html(response['currTemp'].toFixed(1)+"°");
+            $("#humidity").html("Humidity: "+ response['currHumidity'].toFixed(1)+"%");
+            $("#fan").html(response['hvacFan']);
+            $("#mode").html("Mode: " + response['hvacMode']);
+            
+
+            if(response['fanPin']){$("#fan").addClass("on");}else{$("#fan").removeClass("on");}
+            
+            if(!response['coolPin'] && !response['heatPin']){document.getElementById("mode").classList.remove("on");}else{document.getElementById("mode").classList.add("on");}
+            if(response['hvacMode']=="off"){document.getElementById("mode").classList.add("off")}else{document.getElementById("mode").classList.remove("off")}
+
+            if(response['hvacMode']==="cool"){
+              $("#targetTemp").html("Target: " + response['hvacCool'].toFixed(0)+"°");
+              $("#mode").html("Mode: " + response['hvacMode']);
+            }else{
+              $("#targetTemp").html("Target: " + response['hvacHeat'].toFixed(0)+"°");
+            }
+
+            updateIndicator();
+          },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus</h1>");
+          }
+        }); 
+    }
+    loadPage();
+    window.setInterval(loadPage, 6000);
+    </script>
 <script>
+    
+    $("#mode").click(function() {
+        $.ajax({
+        url: "/mode",
+          type: "GET",
+          dataType: "html",
+          cache: false,
+          success: function(response) {
+            loadPage();
+
+        },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus mode</h1>");
+          }
+        }); 
+    });
+
+    $("#fan").click(function() {
+        
+        $.ajax({
+        url: "/fan",
+          type: "GET",
+          dataType: "html",
+          cache: false,
+          success: function(response) {
+            loadPage();
+
+        },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus fan</h1>");
+          }
+        }); 
 
 
+    });
+    $("#top").click(function() {
+        $.ajax({
+        url: "/temp/"+document.getElementById("mode").innerHTML.split(" ")[1]+"?temp="+(parseInt(document.getElementById("targetTemp").innerHTML.split(" ")[1].split("°")[0])+1),
+          type: "GET",
+          dataType: "html",
+          cache: false,
+          success: function(response) {
+            loadPage();
+
+        },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus mode</h1>"); //Print out a garbage error message
+          }
+        }); 
+    });
+    $("#bottom").click(function() {
+        $.ajax({
+        url: "/temp/"+document.getElementById("mode").innerHTML.split(" ")[1]+"?temp="+(parseInt(document.getElementById("targetTemp").innerHTML.split(" ")[1].split("°")[0])-1),
+          type: "GET",
+          dataType: "html",
+          cache: false,
+          success: function(response) {
+            loadPage();
+
+        },
+          error: function(xhr) {
+            $("#thepage").html("<h1>big snuus mode</h1>");
+          }
+        }); 
+    });
 </script>
 </body>
 
