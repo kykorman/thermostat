@@ -1,0 +1,8 @@
+[Unit]
+Description=Thermostat
+
+[Service]
+ExecStart=/usr/bin/gunicorn --chdir /root/thermo/ -c /root/thermo/guni.py --worker-class eventlet app:app
+
+[Install]
+WantedBy=multi-user.target

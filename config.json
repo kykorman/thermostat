@@ -1,0 +1,1 @@
+{"openweathermapAPIKey": "Your Openweathermap.org API Key", "openweathermapCityKey": "openweathermap key for your city", "heatPinNum": 26, "coolPinNum": 20, "fanPinNum": 21, "dhtPinNum": 4, "hvacState": false, "hvacFan": "auto", "hvacMode": "cool", "hvacHeat": 70.0, "hvacCool": 68.0, "currHumidity": 50.599998474121094, "currTemp": 70.5199993133545}

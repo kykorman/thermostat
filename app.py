@@ -18,23 +18,22 @@ app = Flask(__name__)
 def create_application():
     global pinDict, controlDict
 
-    pinDict['heatPin']=gpio.LED(26, active_high=False) #Set active_high to false so that the relays default to pins disconnect (instead of with no power, they short all circuits :/)
-    pinDict['coolPin']=gpio.LED(20, active_high=False)
-    pinDict['fanPin']=gpio.LED(21, active_high=False)
+    with open('config.json') as f:
+        controlDict = json.load(f)
+
+
+    pinDict['heatPin']=gpio.LED(controlDict['heatPinNum'], active_high=False) #Set active_high to false so that the relays default to pins disconnect (instead of with no power, they short all circuits :/)
+    pinDict['coolPin']=gpio.LED(controlDict['coolPinNum'], active_high=False)
+    pinDict['fanPin']=gpio.LED(controlDict['fanPinNum'], active_high=False)
 
     pinDict['heatPin'].off()
     pinDict['coolPin'].off()
     pinDict['fanPin'].off()
-    controlDict['hvacState'] = False
-
 
     #TODO replace with reading/writing as JSON
-    with open('/root/thermo/settings.txt') as f:
-        controlDict['hvacFan'] = f.readline().rstrip()
-        controlDict['hvacMode'] = f.readline().rstrip()
-        controlDict['hvacHeat'] = float(f.readline())
-        controlDict['hvacCool'] = float(f.readline())
 
+
+    controlDict['hvacState'] = False
     if controlDict['hvacFan'] == "on":
         pinDict['fanPin'].on()
        
@@ -90,7 +89,7 @@ def create_application():
     def checkSensors():
         global pinDict, controlDict
         
-        dhtPin = 4
+        dhtPin = controlDict['dhtPinNum']
         while True:
             controlDict['currHumidity'], temp = dht.read_retry(dht.DHT22, dhtPin)
             
@@ -112,6 +111,11 @@ def create_application():
     time.sleep(5)
     hvacThread.start()
 
+def saveControlDict():
+    global controlDict
+    with open("config.json","w") as f:
+        json.dump(controlDict, f)
+
 def withinTempRange(temp):
     if(temp >= 55 and temp <= 85):
         return True
@@ -119,7 +123,7 @@ def withinTempRange(temp):
 
 @app.route('/')
 def home():
-    return render_template('home.html')
+    return render_template('home.html', openweathermapAPIKey=controlDict['openweathermapAPIKey'], openweathermapCityKey=controlDict['openweathermapCityKey'])
 
 # Go to /temp/heat or /temp/cool to set temp without changing operating mode. Could be useful for things like smart home integration.
 @app.route('/temp/<hvacHC>')
@@ -133,11 +137,7 @@ def tempSet(hvacHC):
         elif(hvacHC == "cool"):
             controlDict['hvacCool']=temp
 
-    with open('/root/thermo/settings.txt', 'w') as f:
-        f.write(controlDict['hvacFan'] + "\n")
-        f.write(controlDict['hvacMode'] + "\n")
-        f.write("{:.2f}\n".format(controlDict['hvacHeat']))
-        f.write("{:.2f}\n".format(controlDict['hvacCool']))
+    saveControlDict()
 
     return redirect(url_for('home'))
 
@@ -151,11 +151,7 @@ def heat():
     if(temp is not None and withinTempRange(temp)):
         controlDict['hvacHeat'] = temp
 
-    with open('/root/thermo/settings.txt', 'w') as f:
-        f.write(controlDict['hvacFan'] + "\n")
-        f.write(controlDict['hvacMode'] + "\n")
-        f.write("{:.2f}\n".format(controlDict['hvacHeat']))
-        f.write("{:.2f}\n".format(controlDict['hvacCool']))
+    saveControlDict()
 
     return redirect(url_for('home'))
 
@@ -169,11 +165,7 @@ def cool():
     if(temp is not None and withinTempRange(temp)):
         controlDict['hvacCool'] = temp
 
-    with open('/root/thermo/settings.txt','w') as f:
-        f.write(controlDict['hvacFan'] + "\n")
-        f.write(controlDict['hvacMode'] + "\n")
-        f.write("{:.2f}\n".format(controlDict['hvacHeat']))
-        f.write("{:.2f}\n".format(controlDict['hvacCool']))
+    saveControlDict()
 
     return redirect(url_for('home'))
 
@@ -189,11 +181,7 @@ def fan():
         if(not controlDict['hvacState']): 
             pinDict['fanPin'].off()
 
-    with open('/root/thermo/settings.txt','w') as f:
-        f.write(controlDict['hvacFan'] + "\n")
-        f.write(controlDict['hvacMode'] + "\n")
-        f.write("{:.2f}\n".format(controlDict['hvacHeat']))
-        f.write("{:.2f}\n".format(controlDict['hvacCool']))
+    saveControlDict()
 
     return redirect(url_for('home'))
 
@@ -211,8 +199,9 @@ def retData():
 @app.route('/off')
 def turnOff():
     global controlDict, pinDict
-    controlDict['hvacMode'] = "off" 
+    controlDict['hvacMode'] = "off"
 
+    saveControlDict()
     return redirect(url_for('home'))
 
 
@@ -228,6 +217,3 @@ def toggleMode():
         cool()
     
     return redirect(url_for('home'))
-
-    
-
